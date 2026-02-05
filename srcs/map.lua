@@ -16,7 +16,7 @@ function Map.new()
 		{1,1,1,1,1,1,1,1,1,1},
 	}
 	self.tileSize = 32
-	self.treeImage = love.graphics.newImage("../assets/tree.png")
+	self.treeImage = love.graphics.newImage("assets/tree.png")
 	self.treeScaleX = self.tileSize / self.treeImage:getWidth()
 	self.treeScaleY = self.tileSize / self.treeImage:getHeight()
 	return self
@@ -68,4 +68,4 @@ function Map:collides(px, py, size)
 		tileAt(right, bottom) == 1
 end
 
-
+return Map
