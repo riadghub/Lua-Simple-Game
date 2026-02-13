@@ -3,16 +3,12 @@ Map.__index = Map
 
 function Map.new()
     local self = setmetatable({}, Map)
-
-    -- 1. Chargement des textures de sol
     self.tileTextures = {
-        love.graphics.newImage("assets/decor/clean-tile.png"),      -- ID 1
-        love.graphics.newImage("assets/decor/not-clean-tile.png"),   -- ID 2
-        love.graphics.newImage("assets/decor/not-clean-tile-2.png"), -- ID 3
-        love.graphics.newImage("assets/decor/not-clean-tile-3.png")  -- ID 4
+        love.graphics.newImage("assets/decor/clean-tile.png"),
+        love.graphics.newImage("assets/decor/not-clean-tile.png"),
+        love.graphics.newImage("assets/decor/not-clean-tile-2.png"),
+        love.graphics.newImage("assets/decor/not-clean-tile-3.png")
     }
-
-    -- 2. Chargement des textures de murs (ID 5)
     self.wallTextures = {
         ul = love.graphics.newImage("assets/decor/wall-up-corner-left.png"),
         ur = love.graphics.newImage("assets/decor/wall-up-corner-right.png"),
@@ -33,11 +29,9 @@ function Map.new()
     for y = 1, mapHeight do
         self.grid[y] = {}
         for x = 1, mapWidth do
-            -- On place des murs (ID 5) sur les bords
             if x == 1 or x == mapWidth or y == 1 or y == mapHeight then
                 self.grid[y][x] = 5
             else
-                -- Sol aléatoire à l'intérieur
                 local rand = love.math.random(1, 10)
                 if rand <= 7 then
                     self.grid[y][x] = 1
@@ -87,11 +81,9 @@ function Map:draw()
             local posY = (y - 1) * self.tileHeight
 
             if tileID == 5 then
-                -- Si c'est un mur, on calcule quelle texture utiliser
                 local tex = self:getWallTexture(x, y)
                 love.graphics.draw(tex, posX, posY)
             else
-                -- Sinon on dessine le sol (ID 1 à 4)
                 local texture = self.tileTextures[tileID]
                 love.graphics.draw(texture, posX, posY)
             end

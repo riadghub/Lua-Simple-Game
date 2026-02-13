@@ -8,12 +8,16 @@ function Player.new(x, y)
     self.speed = 140
     self.frameWidth = 32
     self.frameHeight = 32
-    self.state = "idle"
+
+    self.state = "spawning"
+    self.spawnTimer = 0.5
+    self.currentScale = 0
+
     self.direction = "down"
     self.timer = 0
     self.currentFrame = 1
     self.animSpeed = 0.15
-    self.hitboxSize = 3
+    self.hitboxSize = 5
 
     self.animations = {
         ["down-idle"] = { img = love.graphics.newImage("assets/player/down-idle.png") },
@@ -45,9 +49,29 @@ function Player.new(x, y)
     return self
 end
 
-function Player:update(dt, map)
+function Player:update(dt, map, spawn_p_system)
+
+    if self.state == "spawning" then
+        self.spawnTimer = self.spawnTimer - dt
+
+        local progress = 1 - (self.spawnTimer / 0.5)
+        self.currentScale = math.max(0, math.min(1, progress))
+
+        if self.spawnTimer <= 0 then
+            self.state = "idle"
+            self.currentScale = 1
+
+            if spawn_p_system then
+                spawn_p_system:setPosition(self.x, self.y)
+                spawn_p_system:emit(30)
+            end
+        end
+        return
+    end
+
     local moveX, moveY = 0, 0
     local oldX, oldY = self.x, self.y
+
     if love.keyboard.isDown("up", "w") then moveY = -1 end
     if love.keyboard.isDown("down", "s") then moveY = 1 end
     if love.keyboard.isDown("left", "a") then moveX = -1 end
@@ -56,12 +80,7 @@ function Player:update(dt, map)
     if moveX ~= 0 or moveY ~= 0 then
         local dirY = (moveY == -1 and "up") or (moveY == 1 and "down") or ""
         local dirX = (moveX == -1 and "left") or (moveX == 1 and "right") or ""
-        local newDirection = ""
-        if dirX ~= "" and dirY ~= "" then
-            newDirection = dirY .. "-" .. dirX
-        else
-            newDirection = dirY .. dirX
-        end
+        local newDirection = (dirX ~= "" and dirY ~= "") and (dirY .. "-" .. dirX) or (dirY .. dirX)
 
         if self.direction ~= newDirection then
             self.direction = newDirection
@@ -69,7 +88,6 @@ function Player:update(dt, map)
             self.timer = 0
         end
 
-        -- MOUVEMENT PHYSIQUE (Normalisé)
         local currentSpeed = self.speed
         if moveX ~= 0 and moveY ~= 0 then currentSpeed = self.speed * 0.7071 end
 
@@ -87,8 +105,8 @@ function Player:update(dt, map)
     end
 
     local hasMoved = (math.abs(self.x - oldX) > 0.01) or (math.abs(self.y - oldY) > 0.01)
-
     local newState = hasMoved and "move" or "idle"
+
     if self.state ~= newState then
         self.state = newState
         self.currentFrame = 1
@@ -96,24 +114,20 @@ function Player:update(dt, map)
     end
 
     local animKey = self.direction .. "-" .. self.state
-    local anim = self.animations[animKey]
+    local anim = self.animations[animKey] or self.animations["down-idle"]
 
     if anim then
         self.timer = self.timer + dt
         if self.timer >= self.animSpeed then
             self.timer = 0
-            self.currentFrame = self.currentFrame + 1
-            if self.currentFrame > #anim.quads then
-                self.currentFrame = 1
-            end
+            self.currentFrame = (self.currentFrame % #anim.quads) + 1
         end
     end
 end
 
 function Player:draw()
-    local animKey = self.direction .. "-" .. self.state
+    local animKey = (self.state == "spawning") and "down-idle" or (self.direction .. "-" .. self.state)
     local anim = self.animations[animKey] or self.animations["down-idle"]
-
     local frameIndex = math.min(self.currentFrame, #anim.quads)
 
     love.graphics.draw(
@@ -121,9 +135,18 @@ function Player:draw()
         anim.quads[frameIndex],
         math.floor(self.x),
         math.floor(self.y),
-        0, 1, 1,
+        0, 
+        self.currentScale, self.currentScale,
         16, 16
     )
+end
+
+function Player:reset(x, y)
+    self.x, self.y = x, y
+    self.state = "spawning"
+    self.spawnTimer = 0.5
+    self.currentScale = 0
+    self.direction = "down"
 end
 
 return Player
